@@ -242,7 +242,7 @@ EOS
     end
     web_response = server.encode_response(oidresp)
 
-    case web_response.code
+    case web_response.status
     when HTTP_OK
       render :text => web_response.body, :status => 200
 

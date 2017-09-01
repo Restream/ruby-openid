@@ -75,18 +75,17 @@ module OpenID
       result = DiscoveryResult.new(uri)
       begin
         resp = OpenID.fetch(uri, nil, {'Accept' => YADIS_ACCEPT_HEADER})
-      rescue Exception
+      rescue Exception => e
         raise DiscoveryFailure.new("Failed to fetch identity URL #{uri} : #{$!}", $!)
       end
-      if resp.code != "200" and resp.code != "206"
+      if resp.status != 200 and resp.status != 206
         raise DiscoveryFailure.new(
                 "HTTP Response status from identity URL host is not \"200\"."\
-                "Got status #{resp.code.inspect} for #{resp.final_url}", resp)
+                "Got status #{resp.status} for #{resp.final_url}", resp)
       end
 
       # Note the URL after following redirects
       result.normalized_uri = resp.final_url
-
       # Attempt to find out where to go to discover the document or if
       # we already have it
       result.content_type = resp['content-type']
@@ -99,10 +98,10 @@ module OpenID
         rescue
           raise DiscoveryFailure.new("Failed to fetch Yadis URL #{result.xrds_uri} : #{$!}", $!)
         end
-        if resp.code != "200" and resp.code != "206"
+        if resp.status != 200 and resp.status != 206
             exc = DiscoveryFailure.new(
                     "HTTP Response status from Yadis host is not \"200\". " +
-                                       "Got status #{resp.code.inspect} for #{resp.final_url}", resp)
+                                       "Got status #{resp.status.inspect} for #{resp.final_url}", resp)
             exc.identity_url = result.normalized_uri
             raise exc
         end

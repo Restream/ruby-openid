@@ -58,7 +58,7 @@ module OpenID
     def display_identifier
       return @display_identifier if @display_identifier
 
-      return @claimed_id if @claimed_id.nil? 
+      return @claimed_id if @claimed_id.nil?
 
       begin
         parsed_identifier = URI.parse(@claimed_id)
@@ -394,7 +394,7 @@ module OpenID
     #
     # @param uri: normalized identity URL
     # @type uri: str
-    # 
+    #
     # @return: (claimed_id, services)
     # @rtype: (str, list(OpenIDServiceEndpoint))
     #
@@ -468,10 +468,10 @@ module OpenID
 
   def self.discover_no_yadis(uri)
     http_resp = OpenID.fetch(uri)
-    if http_resp.code != "200" and http_resp.code != "206"
+    if http_resp.status != 200 and http_resp.status != 206
       raise DiscoveryFailure.new(
         "HTTP Response status from identity URL host is not \"200\". "\
-        "Got status #{http_resp.code.inspect}", http_resp)
+        "Got status #{http_resp.status.inspect}", http_resp)
     end
 
     claimed_id = http_resp.final_url

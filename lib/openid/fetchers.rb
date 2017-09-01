@@ -111,7 +111,7 @@ module OpenID
     @fetcher = StandardFetcher.new(proxy_uri.host, proxy_uri.port,
                                    proxy_uri.user, proxy_uri.password)
   end
-  
+
   class StandardFetcher
 
     USER_AGENT = "ruby-openid/#{OpenID::VERSION} (#{RUBY_PLATFORM})"
@@ -189,32 +189,19 @@ module OpenID
       headers['User-agent'] ||= USER_AGENT
 
       begin
-        conn = make_connection(url)
-        response = nil
-
-        whole_body = ''
-        body_size_limitter = lambda do |r|
-          r.read_body do |partial|   # read body now
-            whole_body << partial
-            if whole_body.length > MAX_RESPONSE_KB
-              raise FetchingError.new("Response Too Large")
-            end
+        conn = Faraday.new(url: url)
+        response = if body.nil?
+          conn.get do |req|
+            req.headers = headers
           end
-          whole_body
+        else
+          headers["Content-type"] ||= "application/x-www-form-urlencoded"
+          conn.post do |req|
+            req.headers = headers
+            req.body = body
+          end
         end
-        response = conn.start {
-          # Check the certificate against the URL's hostname
-          if supports_ssl?(conn) and conn.use_ssl?
-            conn.post_connection_check(url.host)
-          end
 
-          if body.nil?
-            conn.request_get(url.request_uri, headers, &body_size_limitter)
-          else
-            headers["Content-type"] ||= "application/x-www-form-urlencoded"
-            conn.request_post(url.request_uri, body, headers, &body_size_limitter)
-          end
-        }
       rescue Timeout::Error => why
         raise FetchingError, "Error fetching #{url}: #{why}"
       rescue RuntimeError => why
@@ -242,7 +229,6 @@ module OpenID
         end
       else
         response = HTTPResponse._from_net_response(response, unparsed_url)
-        response.body = whole_body
         setup_encoding(response)
         return response
       end
@@ -251,12 +237,12 @@ module OpenID
     private
     def setup_encoding(response)
       return unless defined?(Encoding.default_external)
-      return unless charset = response.type_params["charset"]
-
-      begin
-        encoding = Encoding.find(charset)
-      rescue ArgumentError
-      end
+      # return unless charset = response.type_params["charset"]
+      # charset = 'UTF-8'
+      # begin
+      #   encoding = Encoding.find(charset)
+      # rescue ArgumentError
+      # end
       encoding ||= Encoding.default_external
 
       body = response.body
